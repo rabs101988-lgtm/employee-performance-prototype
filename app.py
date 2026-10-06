@@ -25,33 +25,17 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-
-    /* ======================================================
-       GENERAL PAGE
-       ====================================================== */
-
     .stApp {
         background-color: #f5f8f6;
     }
 
-
-    /* ======================================================
-       SIDEBAR
-       ====================================================== */
+    /* ================= SIDEBAR ================= */
 
     [data-testid="stSidebar"] {
         background-color: #064d2d !important;
     }
 
     [data-testid="stSidebar"] * {
-        color: #ffffff !important;
-    }
-
-    [data-testid="stSidebar"] .stMarkdown,
-    [data-testid="stSidebar"] .stMarkdown p,
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] div {
         color: #ffffff !important;
     }
 
@@ -67,21 +51,14 @@ st.markdown(
         font-size: 16px;
         font-weight: 700;
         padding: 10px 0;
-        margin-bottom: 3px;
-    }
-
-    .sidebar-divider {
-        border: none;
-        border-top: 1px solid rgba(255,255,255,0.30);
-        margin: 20px 0;
     }
 
     .sidebar-section {
         color: #ffffff !important;
         font-size: 14px;
         font-weight: 800;
-        margin-top: 15px;
-        margin-bottom: 12px;
+        margin-top: 18px;
+        margin-bottom: 10px;
     }
 
     .sidebar-info {
@@ -90,17 +67,16 @@ st.markdown(
         line-height: 1.8;
     }
 
+    .sidebar-divider {
+        border: none;
+        border-top: 1px solid rgba(255,255,255,0.30);
+        margin: 20px 0;
+    }
 
-    /* ======================================================
-       HEADER
-       ====================================================== */
+    /* ================= HEADER ================= */
 
     .adustech-header {
-        background: linear-gradient(
-            135deg,
-            #006b3c,
-            #0b8f4d
-        );
+        background: linear-gradient(135deg, #006b3c, #0b8f4d);
         padding: 28px 35px;
         border-radius: 0 0 18px 18px;
         margin-bottom: 25px;
@@ -121,10 +97,7 @@ st.markdown(
         line-height: 1.6;
     }
 
-
-    /* ======================================================
-       SECTION HEADINGS
-       ====================================================== */
+    /* ================= SECTION TITLES ================= */
 
     .section-title {
         color: #075b35 !important;
@@ -136,17 +109,10 @@ st.markdown(
         margin-bottom: 18px;
     }
 
-
-    /* ======================================================
-       RESULT CARD
-       ====================================================== */
+    /* ================= RESULT CARD ================= */
 
     .result-card {
-        background: linear-gradient(
-            135deg,
-            #078743,
-            #0b9b52
-        );
+        background: linear-gradient(135deg, #078743, #0b9b52);
         padding: 35px;
         border-radius: 16px;
         text-align: center;
@@ -168,10 +134,7 @@ st.markdown(
         letter-spacing: 1px;
     }
 
-
-    /* ======================================================
-       PROBABILITY CARDS
-       ====================================================== */
+    /* ================= PROBABILITY CARDS ================= */
 
     .prob-card {
         background: #ffffff;
@@ -196,10 +159,7 @@ st.markdown(
         font-weight: 800;
     }
 
-
-    /* ======================================================
-       INFORMATION CARDS
-       ====================================================== */
+    /* ================= INFORMATION CARDS ================= */
 
     .info-card {
         background: #ffffff;
@@ -223,10 +183,7 @@ st.markdown(
         line-height: 1.6;
     }
 
-
-    /* ======================================================
-       RESEARCH NOTICE
-       ====================================================== */
+    /* ================= RESEARCH NOTICE ================= */
 
     .research-notice {
         background: #ecfdf5;
@@ -240,18 +197,15 @@ st.markdown(
         margin: 15px 0 25px 0;
     }
 
-
-    /* ======================================================
-       BUTTON
-       ====================================================== */
+    /* ================= BUTTON ================= */
 
     div.stButton > button {
         background-color: #087f42 !important;
         color: #ffffff !important;
-        border: none;
-        border-radius: 8px;
-        font-weight: 700;
-        padding: 10px 22px;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+        padding: 10px 22px !important;
     }
 
     div.stButton > button:hover {
@@ -259,10 +213,7 @@ st.markdown(
         color: #ffffff !important;
     }
 
-
-    /* ======================================================
-       FOOTER
-       ====================================================== */
+    /* ================= FOOTER ================= */
 
     .footer {
         text-align: center;
@@ -272,7 +223,6 @@ st.markdown(
         margin-top: 35px;
         border-top: 1px solid #d9e8df;
     }
-
     </style>
     """,
     unsafe_allow_html=True
@@ -280,7 +230,7 @@ st.markdown(
 
 
 # ============================================================
-# LOAD SAVED MODEL
+# LOAD MODEL
 # ============================================================
 
 MODEL_PATH = Path(
@@ -288,63 +238,42 @@ MODEL_PATH = Path(
 )
 
 if not MODEL_PATH.exists():
-
     st.error(
-        "The saved model could not be found. "
-        "Please ensure that "
+        "The saved model could not be found. Please ensure that "
         "models/employee_performance_decision_tree_pipeline.pkl "
         "exists in the repository."
     )
-
     st.stop()
 
-
 try:
-
     model = joblib.load(MODEL_PATH)
-
 except Exception as e:
-
-    st.error(
-        f"Unable to load the saved model: {e}"
-    )
-
+    st.error(f"Unable to load the saved model: {e}")
     st.stop()
 
 
 # ============================================================
-# GET PIPELINE COMPONENTS
+# GET PREPROCESSOR AND CLASSIFIER
 # ============================================================
 
 try:
-
     preprocessor = model.named_steps["preprocessor"]
-
 except Exception:
-
     st.error(
         "The saved model does not contain the expected "
         "'preprocessor' step."
     )
-
     st.stop()
 
-
 if "model" in model.named_steps:
-
     tree_model = model.named_steps["model"]
-
 elif "classifier" in model.named_steps:
-
     tree_model = model.named_steps["classifier"]
-
 else:
-
     st.error(
-        "The saved pipeline does not contain a "
-        "'model' or 'classifier' step."
+        "The saved pipeline does not contain a 'model' "
+        "or 'classifier' step."
     )
-
     st.stop()
 
 
@@ -354,19 +283,7 @@ else:
 
 st.markdown(
     """
-    <div class="adustech-header">
-
-        <div class="header-title">
-            Aliko Dangote University of Science and Technology
-        </div>
-
-        <div class="header-subtitle">
-            Employee Performance Classification Research Prototype
-            <br>
-            Wudil, Kano State, Nigeria
-        </div>
-
-    </div>
+    <div class="adustech-header"><div class="header-title">Aliko Dangote University of Science and Technology</div><div class="header-subtitle">Employee Performance Classification Research Prototype<br>Wudil, Kano State, Nigeria</div></div>
     """,
     unsafe_allow_html=True
 )
@@ -380,41 +297,7 @@ with st.sidebar:
 
     st.markdown(
         """
-        <div class="sidebar-title">
-            Navigation
-        </div>
-
-        <div class="sidebar-item">
-            🏠 Home
-        </div>
-
-        <div class="sidebar-item">
-            👤 Employee Classification
-        </div>
-
-        <div class="sidebar-item">
-            📊 Results
-        </div>
-
-        <div class="sidebar-item">
-            🔍 SHAP Explanation
-        </div>
-
-        <div class="sidebar-item">
-            ℹ️ About
-        </div>
-
-        <hr class="sidebar-divider">
-
-        <div class="sidebar-section">
-            Research Prototype
-        </div>
-
-        <div class="sidebar-info">
-            MSc Data Science Research<br>
-            ADUSTECH Application Context<br>
-            IBM HR Analytics Dataset
-        </div>
+        <div class="sidebar-title">Navigation</div><div class="sidebar-item">🏠 Home</div><div class="sidebar-item">👤 Employee Classification</div><div class="sidebar-item">📊 Results</div><div class="sidebar-item">🔍 SHAP Explanation</div><div class="sidebar-item">ℹ️ About</div><hr class="sidebar-divider"><div class="sidebar-section">Research Prototype</div><div class="sidebar-info">MSc Data Science Research<br>ADUSTECH Application Context<br>IBM HR Analytics Dataset</div>
         """,
         unsafe_allow_html=True
     )
@@ -426,19 +309,7 @@ with st.sidebar:
 
 st.markdown(
     """
-    <div class="research-notice">
-
-        <strong>Research Prototype Notice:</strong>
-
-        This application is an MSc research prototype for classifying
-        observed employee performance categories using the IBM HR Analytics
-        Employee Attrition & Performance dataset.
-
-        The dataset is fictional and is not an ADUSTECH employee database.
-        The application should therefore not be interpreted as an operational
-        ADUSTECH human-resource decision-making system.
-
-    </div>
+    <div class="research-notice"><strong>Research Prototype Notice:</strong> This application is an MSc research prototype for classifying observed employee performance categories using the IBM HR Analytics Employee Attrition &amp; Performance dataset. The dataset is fictional and is not an ADUSTECH employee database. The application should therefore not be interpreted as an operational ADUSTECH human-resource decision-making system.</div>
     """,
     unsafe_allow_html=True
 )
@@ -450,9 +321,7 @@ st.markdown(
 
 st.markdown(
     """
-    <div class="section-title">
-        Employee Performance Classification
-    </div>
+    <div class="section-title">Employee Performance Classification</div>
     """,
     unsafe_allow_html=True
 )
@@ -469,9 +338,7 @@ st.write(
 
 st.markdown(
     """
-    <div class="section-title">
-        Employee Information
-    </div>
+    <div class="section-title">Employee Information</div>
     """,
     unsafe_allow_html=True
 )
@@ -483,10 +350,6 @@ st.markdown(
 
 col1, col2, col3 = st.columns(3)
 
-
-# ------------------------------------------------------------
-# COLUMN 1
-# ------------------------------------------------------------
 
 with col1:
 
@@ -563,10 +426,6 @@ with col1:
     )
 
 
-# ------------------------------------------------------------
-# COLUMN 2
-# ------------------------------------------------------------
-
 with col2:
 
     MonthlyIncome = st.number_input(
@@ -641,10 +500,6 @@ with col2:
         step=1
     )
 
-
-# ------------------------------------------------------------
-# COLUMN 3
-# ------------------------------------------------------------
 
 with col3:
 
@@ -797,7 +652,7 @@ predict_button = st.button(
 
 
 # ============================================================
-# MODEL CLASSIFICATION
+# CLASSIFICATION
 # ============================================================
 
 if predict_button:
@@ -805,35 +660,24 @@ if predict_button:
     try:
 
         # ----------------------------------------------------
-        # Prediction
+        # PREDICTION
         # ----------------------------------------------------
 
         prediction = model.predict(input_data)[0]
 
-        probabilities = None
-
         if hasattr(model, "predict_proba"):
-
-            probabilities = model.predict_proba(
-                input_data
-            )[0]
-
-
-        # Dataset target mapping:
-        # 0 = Excellent
-        # 1 = Outstanding
+            probabilities = model.predict_proba(input_data)[0]
+        else:
+            probabilities = None
 
         if int(prediction) == 0:
-
             prediction_label = "Excellent"
-
         else:
-
             prediction_label = "Outstanding"
 
 
         # ----------------------------------------------------
-        # Probability values
+        # PROBABILITIES
         # ----------------------------------------------------
 
         excellent_prob = 0.0
@@ -844,44 +688,30 @@ if predict_button:
             classes = list(model.classes_)
 
             if 0 in classes:
-
                 excellent_prob = probabilities[
                     classes.index(0)
                 ]
 
             if 1 in classes:
-
                 outstanding_prob = probabilities[
                     classes.index(1)
                 ]
 
 
         # ====================================================
-        # RESULT
+        # CLASSIFICATION RESULT
         # ====================================================
 
         st.markdown(
             """
-            <div class="section-title">
-                Classification Result
-            </div>
+            <div class="section-title">Classification Result</div>
             """,
             unsafe_allow_html=True
         )
 
         st.markdown(
             f"""
-            <div class="result-card">
-
-                <div class="result-label">
-                    Classified Performance Category
-                </div>
-
-                <div class="result-value">
-                    {prediction_label.upper()}
-                </div>
-
-            </div>
+            <div class="result-card"><div class="result-label">Classified Performance Category</div><div class="result-value">{prediction_label.upper()}</div></div>
             """,
             unsafe_allow_html=True
         )
@@ -893,51 +723,27 @@ if predict_button:
 
         st.markdown(
             """
-            <div class="section-title">
-                Classification Probabilities
-            </div>
+            <div class="section-title">Classification Probabilities</div>
             """,
             unsafe_allow_html=True
         )
 
         probability_col1, probability_col2 = st.columns(2)
 
-
         with probability_col1:
 
             st.markdown(
                 f"""
-                <div class="prob-card">
-
-                    <div class="prob-title">
-                        Excellent
-                    </div>
-
-                    <div class="prob-value">
-                        {excellent_prob:.2%}
-                    </div>
-
-                </div>
+                <div class="prob-card"><div class="prob-title">Excellent</div><div class="prob-value">{excellent_prob:.2%}</div></div>
                 """,
                 unsafe_allow_html=True
             )
-
 
         with probability_col2:
 
             st.markdown(
                 f"""
-                <div class="prob-card">
-
-                    <div class="prob-title">
-                        Outstanding
-                    </div>
-
-                    <div class="prob-value">
-                        {outstanding_prob:.2%}
-                    </div>
-
-                </div>
+                <div class="prob-card"><div class="prob-title">Outstanding</div><div class="prob-value">{outstanding_prob:.2%}</div></div>
                 """,
                 unsafe_allow_html=True
             )
@@ -949,23 +755,7 @@ if predict_button:
 
         st.markdown(
             """
-            <div class="info-card">
-
-                <div class="info-title">
-                    Interpretation
-                </div>
-
-                <div class="info-text">
-
-                    The displayed probabilities are model estimates for
-                    the two observed performance categories represented
-                    in the experimental dataset. They should not be
-                    interpreted as guarantees or as evidence of an
-                    employee's true future performance.
-
-                </div>
-
-            </div>
+            <div class="info-card"><div class="info-title">Interpretation</div><div class="info-text">The displayed probabilities are model estimates for the two observed performance categories represented in the experimental dataset. They should not be interpreted as guarantees or as evidence of an employee's true future performance.</div></div>
             """,
             unsafe_allow_html=True
         )
@@ -977,60 +767,41 @@ if predict_button:
 
         st.markdown(
             """
-            <div class="section-title">
-                SHAP Explanation
-            </div>
+            <div class="section-title">SHAP Explanation</div>
             """,
             unsafe_allow_html=True
         )
 
-
         try:
 
-            # Transform input using the saved preprocessing pipeline
             transformed_input = preprocessor.transform(
                 input_data
             )
 
-
-            # Convert sparse matrix to dense
             if hasattr(
                 transformed_input,
                 "toarray"
             ):
-
                 transformed_dense = (
                     transformed_input.toarray()
                 )
-
             else:
-
                 transformed_dense = np.asarray(
                     transformed_input
                 )
 
-
-            # Feature names
             try:
-
                 feature_names = (
                     preprocessor
                     .get_feature_names_out()
                 )
-
             except Exception:
-
                 feature_names = [
                     f"Feature {i + 1}"
                     for i in range(
                         transformed_dense.shape[1]
                     )
                 ]
-
-
-            # ------------------------------------------------
-            # SHAP TreeExplainer
-            # ------------------------------------------------
 
             explainer = shap.TreeExplainer(
                 tree_model
@@ -1040,9 +811,8 @@ if predict_button:
                 transformed_dense
             )
 
-
             # ------------------------------------------------
-            # Handle SHAP output
+            # SHAP output handling
             # ------------------------------------------------
 
             if isinstance(
@@ -1051,13 +821,10 @@ if predict_button:
             ):
 
                 if len(shap_values) > 1:
-
                     values = np.asarray(
                         shap_values[1]
                     )[0]
-
                 else:
-
                     values = np.asarray(
                         shap_values[0]
                     )[0]
@@ -1071,24 +838,13 @@ if predict_button:
                 if values_array.ndim == 3:
 
                     if values_array.shape[-1] > 1:
-
-                        values = (
-                            values_array[
-                                0,
-                                :,
-                                1
-                            ]
-                        )
-
+                        values = values_array[
+                            0, :, 1
+                        ]
                     else:
-
-                        values = (
-                            values_array[
-                                0,
-                                :,
-                                0
-                            ]
-                        )
+                        values = values_array[
+                            0, :, 0
+                        ]
 
                 elif values_array.ndim == 2:
 
@@ -1105,7 +861,7 @@ if predict_button:
 
 
             # ------------------------------------------------
-            # Ensure matching dimensions
+            # Match dimensions
             # ------------------------------------------------
 
             if len(values) != len(
@@ -1118,7 +874,6 @@ if predict_button:
                 )
 
                 values = values[:minimum]
-
                 feature_names = (
                     feature_names[:minimum]
                 )
@@ -1137,7 +892,6 @@ if predict_button:
                 }
             )
 
-
             shap_df = (
                 shap_df
                 .sort_values(
@@ -1154,7 +908,6 @@ if predict_button:
                 "classification."
             )
 
-
             st.dataframe(
                 shap_df[
                     [
@@ -1170,7 +923,7 @@ if predict_button:
 
 
             # ------------------------------------------------
-            # SHAP bar chart
+            # SHAP BAR CHART
             # ------------------------------------------------
 
             chart_df = (
@@ -1181,7 +934,6 @@ if predict_button:
                 )
             )
 
-
             st.bar_chart(
                 chart_df.set_index(
                     "Feature"
@@ -1189,7 +941,6 @@ if predict_button:
                     "Absolute SHAP Value"
                 ]
             )
-
 
             st.caption(
                 "SHAP values describe the contribution of "
@@ -1214,13 +965,10 @@ if predict_button:
 
         st.markdown(
             """
-            <div class="section-title">
-                Submitted Employee Information
-            </div>
+            <div class="section-title">Submitted Employee Information</div>
             """,
             unsafe_allow_html=True
         )
-
 
         display_data = (
             input_data
@@ -1232,7 +980,6 @@ if predict_button:
             "Variable",
             "Value"
         ]
-
 
         st.dataframe(
             display_data,
@@ -1247,69 +994,28 @@ if predict_button:
 
         st.markdown(
             """
-            <div class="section-title">
-                Prototype Information
-            </div>
+            <div class="section-title">Prototype Information</div>
             """,
             unsafe_allow_html=True
         )
 
+        st.markdown(
+            """
+            <div class="info-card"><div class="info-title">Selected Model</div><div class="info-text">Decision Tree classifier selected using the highest mean five-fold stratified cross-validation Macro F1 among the four evaluated algorithms.</div></div>
+            """,
+            unsafe_allow_html=True
+        )
 
         st.markdown(
             """
-            <div class="info-card">
+            <div class="info-card"><div class="info-title">Experimental Dataset</div><div class="info-text">IBM HR Analytics Employee Attrition &amp; Performance dataset. The dataset is a public fictional dataset used for the experimental evaluation.</div></div>
+            """,
+            unsafe_allow_html=True
+        )
 
-                <div class="info-title">
-                    Selected Model
-                </div>
-
-                <div class="info-text">
-
-                    Decision Tree classifier selected using the
-                    highest mean five-fold stratified
-                    cross-validation Macro F1 among the four
-                    evaluated algorithms.
-
-                </div>
-
-            </div>
-
-
-            <div class="info-card">
-
-                <div class="info-title">
-                    Experimental Dataset
-                </div>
-
-                <div class="info-text">
-
-                    IBM HR Analytics Employee Attrition &
-                    Performance dataset. The dataset is a public
-                    fictional dataset used for the experimental
-                    evaluation.
-
-                </div>
-
-            </div>
-
-
-            <div class="info-card">
-
-                <div class="info-title">
-                    Application Context
-                </div>
-
-                <div class="info-text">
-
-                    Aliko Dangote University of Science and
-                    Technology (ADUSTECH), Wudil, Kano State.
-                    ADUSTECH is the intended application context
-                    and is not the source of the experimental
-                    employee records.
-
-                </div>
-
-            </div>
+        st.markdown(
+            """
+            <div class="info-card"><div class="info-title">Application Context</div><div class="info-text">Aliko Dangote University of Science and Technology (ADUSTECH), Wudil, Kano State. ADUSTECH is the intended application context and is not the source of the experimental employee records.</div></div>
             """,
             unsafe_allow_html=True
         )
@@ -1331,17 +1037,7 @@ if predict_button:
 
 st.markdown(
     """
-    <div class="footer">
-
-        MSc Data Science Research Prototype<br>
-
-        Machine-Learning-Based Employee Performance
-        Classification<br>
-
-        Aliko Dangote University of Science and Technology
-        (ADUSTECH) Application Context
-
-    </div>
+    <div class="footer">MSc Data Science Research Prototype<br>Machine-Learning-Based Employee Performance Classification<br>Aliko Dangote University of Science and Technology (ADUSTECH) Application Context</div>
     """,
     unsafe_allow_html=True
 )
