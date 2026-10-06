@@ -1,10 +1,9 @@
-
-import os
-import joblib
-import numpy as np
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import numpy as np
+import joblib
 import shap
+from pathlib import Path
 
 
 # ============================================================
@@ -12,231 +11,166 @@ import shap
 # ============================================================
 
 st.set_page_config(
-    page_title="ADUSTECH Employee Performance Classification",
-    page_icon="🎓",
+    page_title="ADUSTECH Employee Performance Prototype",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 
 # ============================================================
-# ADUSTECH-INSPIRED GREEN DESIGN
+# CUSTOM CSS
 # ============================================================
 
 st.markdown(
     """
     <style>
 
+    /* Main page */
     .stApp {
-        background-color: #f4f7f5;
-        color: #1f2933;
+        background-color: #f5f8f6;
     }
 
-    .block-container {
-        max-width: 1400px;
-        padding-top: 1rem;
-        padding-bottom: 2rem;
-    }
-
-    /* ================= HEADER ================= */
-
+    /* Header */
     .adustech-header {
-        background-color: #087f3f;
-        color: white;
-        padding: 18px 25px;
-        border-radius: 0 0 10px 10px;
+        background: linear-gradient(135deg, #006b3c, #0b8f4d);
+        padding: 25px 35px;
+        border-radius: 0 0 18px 18px;
         margin-bottom: 25px;
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.12);
-    }
-
-    .adustech-logo {
-        width: 68px;
-        height: 68px;
-        min-width: 68px;
-        background-color: white;
-        color: #087f3f;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        font-size: 11px;
-        font-weight: 800;
-        border: 3px solid #dcefe4;
-    }
-
-    .adustech-name {
-        font-size: 25px;
-        font-weight: 800;
-    }
-
-    .adustech-subtitle {
-        font-size: 15px;
-        margin-top: 3px;
-    }
-
-    /* ================= SIDEBAR ================= */
-
-    section[data-testid="stSidebar"] {
-        background-color: #063d25;
-    }
-
-    section[data-testid="stSidebar"] * {
-        color: white;
-    }
-
-    .sidebar-title {
-        color: white !important;
-        font-size: 20px;
-        font-weight: 700;
-        padding: 10px 5px 15px 5px;
-        border-bottom: 1px solid rgba(255,255,255,0.2);
-        margin-bottom: 15px;
-    }
-
-    .sidebar-text {
-        color: #dcefe4 !important;
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    /* ================= PAGE TITLES ================= */
-
-    .page-title {
-        color: #075b2d;
-        font-size: 30px;
-        font-weight: 800;
-        margin-bottom: 5px;
-    }
-
-    .page-subtitle {
-        color: #667085;
-        font-size: 15px;
-        margin-bottom: 20px;
-    }
-
-    /* ================= SECTION HEADINGS ================= */
-
-    .section-heading {
-        color: #075b2d;
-        font-size: 21px;
-        font-weight: 750;
-        margin-top: 25px;
-        margin-bottom: 14px;
-        border-left: 5px solid #087f3f;
-        padding-left: 10px;
-    }
-
-    /* ================= CARDS ================= */
-
-    .info-card {
-        background-color: white;
-        border: 1px solid #dfe7e2;
-        border-radius: 9px;
-        padding: 20px;
-        margin-bottom: 18px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    .card-title {
-        color: #075b2d;
-        font-size: 18px;
-        font-weight: 700;
-    }
-
-    /* ================= RESULT ================= */
-
-    .result-card {
-        background-color: #087f3f;
-        color: white;
-        border-radius: 10px;
-        padding: 30px;
-        text-align: center;
-        margin: 15px 0 25px 0;
         box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
 
+    .header-title {
+        color: white;
+        font-size: 30px;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .header-subtitle {
+        color: #e9fff3;
+        font-size: 15px;
+        margin-top: 7px;
+    }
+
+    /* Section headings */
+    .section-title {
+        color: #075b35;
+        font-size: 23px;
+        font-weight: 750;
+        border-left: 5px solid #0b8f4d;
+        padding-left: 12px;
+        margin-top: 25px;
+        margin-bottom: 18px;
+    }
+
+    /* Result card */
+    .result-card {
+        background: linear-gradient(135deg, #078743, #0b9b52);
+        padding: 35px;
+        border-radius: 16px;
+        text-align: center;
+        margin: 20px 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.13);
+    }
+
     .result-label {
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
+        color: white;
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 12px;
     }
 
     .result-value {
-        font-size: 38px;
-        font-weight: 850;
-        margin-top: 8px;
+        color: white;
+        font-size: 36px;
+        font-weight: 800;
+        letter-spacing: 1px;
     }
 
-    /* ================= PROBABILITIES ================= */
-
+    /* Probability cards */
     .prob-card {
-        background-color: white;
-        border: 1px solid #dfe7e2;
-        border-left: 5px solid #087f3f;
-        border-radius: 8px;
-        padding: 18px;
+        background: white;
+        border-left: 5px solid #0b8f4d;
+        border-radius: 12px;
+        padding: 23px;
         text-align: center;
-        box-shadow: 0 2px 7px rgba(0,0,0,0.04);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        margin-bottom: 15px;
     }
 
     .prob-title {
-        color: #667085;
-        font-size: 14px;
-        font-weight: 600;
+        color: #14532d;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 10px;
     }
 
     .prob-value {
-        color: #075b2d;
-        font-size: 27px;
+        color: #0b8f4d;
+        font-size: 29px;
         font-weight: 800;
-        margin-top: 5px;
     }
 
-    /* ================= NOTICE ================= */
+    /* Information cards */
+    .info-card {
+        background: white;
+        padding: 22px;
+        border-radius: 12px;
+        border: 1px solid #d9e8df;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 15px;
+    }
 
-    .notice {
-        background-color: #edf7f1;
-        border-left: 5px solid #087f3f;
-        padding: 15px 18px;
-        border-radius: 6px;
-        color: #344054;
+    .info-title {
+        color: #075b35;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .info-text {
+        color: #374151;
         font-size: 14px;
         line-height: 1.6;
-        margin: 18px 0;
     }
 
-    /* ================= BUTTON ================= */
+    /* Research notice */
+    .research-notice {
+        background: #ecfdf5;
+        border: 1px solid #86efac;
+        border-left: 5px solid #0b8f4d;
+        border-radius: 10px;
+        padding: 17px 20px;
+        color: #14532d;
+        font-size: 14px;
+        line-height: 1.6;
+        margin: 15px 0 25px 0;
+    }
 
-    .stButton > button {
-        background-color: #087f3f;
+    /* Footer */
+    .footer {
+        text-align: center;
+        color: #6b7280;
+        font-size: 12px;
+        padding: 25px 0 10px 0;
+        margin-top: 35px;
+        border-top: 1px solid #d9e8df;
+    }
+
+    /* Streamlit buttons */
+    div.stButton > button {
+        background-color: #087f42;
         color: white;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         font-weight: 700;
-        padding: 10px 20px;
+        padding: 10px 22px;
     }
 
-    .stButton > button:hover {
-        background-color: #075b2d;
+    div.stButton > button:hover {
+        background-color: #056b36;
         color: white;
-    }
-
-    /* ================= FOOTER ================= */
-
-    .footer {
-        background-color: #063d25;
-        color: white;
-        padding: 16px;
-        margin-top: 35px;
-        border-radius: 7px;
-        text-align: center;
-        font-size: 13px;
-        line-height: 1.6;
     }
 
     </style>
@@ -249,47 +183,46 @@ st.markdown(
 # LOAD SAVED MODEL
 # ============================================================
 
-MODEL_PATH = os.path.join(
-    "models",
-    "employee_performance_decision_tree_pipeline.pkl"
-)
+MODEL_PATH = Path("models/employee_performance_decision_tree_pipeline.pkl")
 
-if not os.path.exists(MODEL_PATH):
+if not MODEL_PATH.exists():
     st.error(
-        "Model file not found. Please make sure "
-        "'employee_performance_decision_tree_pipeline.pkl' "
-        "is inside the models folder."
+        "The saved model could not be found. "
+        "Please ensure that models/employee_performance_decision_tree_pipeline.pkl "
+        "exists in the repository."
     )
     st.stop()
 
 try:
     model = joblib.load(MODEL_PATH)
-except Exception as model_error:
-    st.error("The saved model could not be loaded.")
+except Exception as e:
+    st.error(f"Unable to load the saved model: {e}")
     st.stop()
 
 
 # ============================================================
-# IDENTIFY MODEL PIPELINE COMPONENTS
+# IDENTIFY PIPELINE STEPS
 # ============================================================
 
 try:
     preprocessor = model.named_steps["preprocessor"]
-
-    if "model" in model.named_steps:
-        tree_model = model.named_steps["model"]
-    elif "classifier" in model.named_steps:
-        tree_model = model.named_steps["classifier"]
-    else:
-        st.error(
-            "The saved pipeline does not contain the expected "
-            "model/classifier step."
-        )
-        st.stop()
-
 except Exception:
     st.error(
-        "The saved model pipeline structure could not be read."
+        "The saved model does not contain the expected "
+        "'preprocessor' pipeline step."
+    )
+    st.stop()
+
+
+# The local prototype was trained with "model".
+# This fallback also supports a pipeline using "classifier".
+if "model" in model.named_steps:
+    tree_model = model.named_steps["model"]
+elif "classifier" in model.named_steps:
+    tree_model = model.named_steps["classifier"]
+else:
+    st.error(
+        "The saved pipeline does not contain a 'model' or 'classifier' step."
     )
     st.stop()
 
@@ -300,7 +233,16 @@ except Exception:
 
 st.markdown(
     """
-  
+    <div class="adustech-header">
+        <div class="header-title">
+            Aliko Dangote University of Science and Technology
+        </div>
+        <div class="header-subtitle">
+            Employee Performance Classification Research Prototype
+            <br>
+            Wudil, Kano State, Nigeria
+        </div>
+    </div>
     """,
     unsafe_allow_html=True
 )
@@ -313,55 +255,90 @@ st.markdown(
 with st.sidebar:
 
     st.markdown(
-        '<div class="sidebar-title">Navigation</div>',
-        unsafe_allow_html=True
-    )
-
-    st.markdown("🏠  **Home**")
-    st.markdown("👤  **Employee Classification**")
-    st.markdown("📊  **Results**")
-    st.markdown("🔍  **SHAP Explanation**")
-    st.markdown("ℹ️  **About**")
-
-    st.markdown("---")
-
-    st.markdown(
         """
-        <div class="sidebar-text">
-
-        <strong>Research Prototype</strong><br><br>
-
-        MSc Data Science Research<br>
-        ADUSTECH Application Context<br>
-        IBM HR Analytics Dataset<br><br>
-
-        Selected Model:<br>
-        <strong>Decision Tree Classifier</strong>
-
+        <div style="
+            color:white;
+            font-size:24px;
+            font-weight:800;
+            margin-bottom:25px;
+        ">
+            Navigation
         </div>
         """,
         unsafe_allow_html=True
     )
 
+    st.markdown(
+        """
+        <div style="
+            color:white;
+            font-size:16px;
+            font-weight:700;
+            padding:10px 0;
+        ">
+            🏠 Home
+        </div>
 
-# ============================================================
-# MAIN TITLE
-# ============================================================
+        <div style="
+            color:white;
+            font-size:16px;
+            font-weight:700;
+            padding:10px 0;
+        ">
+            👤 Employee Classification
+        </div>
 
-st.markdown(
-    '<div class="page-title">'
-    'Employee Performance Classification'
-    '</div>',
-    unsafe_allow_html=True
-)
+        <div style="
+            color:white;
+            font-size:16px;
+            font-weight:700;
+            padding:10px 0;
+        ">
+            📊 Results
+        </div>
 
-st.markdown(
-    '<div class="page-subtitle">'
-    'Classification of observed employee performance categories '
-    'using the selected machine-learning model.'
-    '</div>',
-    unsafe_allow_html=True
-)
+        <div style="
+            color:white;
+            font-size:16px;
+            font-weight:700;
+            padding:10px 0;
+        ">
+            🔍 SHAP Explanation
+        </div>
+
+        <div style="
+            color:white;
+            font-size:16px;
+            font-weight:700;
+            padding:10px 0;
+        ">
+            ℹ️ About
+        </div>
+
+        <hr style="border-color:rgba(255,255,255,0.25);">
+
+        <div style="
+            color:white;
+            font-size:14px;
+            font-weight:700;
+            margin-top:20px;
+        ">
+            Research Prototype
+        </div>
+
+        <div style="
+            color:#e6fff1;
+            font-size:13px;
+            line-height:1.7;
+            margin-top:12px;
+        ">
+            MSc Data Science Research<br>
+            ADUSTECH Application Context<br>
+            IBM HR Analytics Dataset
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # ============================================================
@@ -370,16 +347,14 @@ st.markdown(
 
 st.markdown(
     """
-    <div class="notice">
-
-    <strong>Research Prototype Notice:</strong><br>
-
-    This application is a standalone MSc research prototype.
-    The experimental model was developed using the fictional IBM HR Analytics
-    Employee Attrition & Performance dataset. It does not use actual ADUSTECH
-    employee records and should not be used as an autonomous employment
-    decision-making system.
-
+    <div class="research-notice">
+        <strong>Research Prototype Notice:</strong>
+        This application is an MSc research prototype for classifying
+        observed employee performance categories using the IBM HR Analytics
+        Employee Attrition & Performance dataset. The dataset is fictional
+        and is not an ADUSTECH employee database. The application should
+        therefore not be interpreted as an operational ADUSTECH human-resource
+        decision-making system.
     </div>
     """,
     unsafe_allow_html=True
@@ -387,20 +362,43 @@ st.markdown(
 
 
 # ============================================================
-# EMPLOYEE INPUT
+# INTRODUCTION
 # ============================================================
 
 st.markdown(
-    '<div class="section-heading">Employee Information</div>',
+    """
+    <div class="section-title">
+        Employee Performance Classification
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
+st.write(
+    "Enter the available employee attributes below to obtain a "
+    "classification of the observed performance category."
+)
+
+
+# ============================================================
+# INPUT VARIABLES
+# ============================================================
+
+st.markdown(
+    """
+    <div class="section-title">
+        Employee Information
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# ------------------------------------------------------------
+# Numeric and categorical inputs
+# ------------------------------------------------------------
+
 col1, col2, col3 = st.columns(3)
-
-
-# ============================================================
-# COLUMN 1
-# ============================================================
 
 with col1:
 
@@ -408,7 +406,172 @@ with col1:
         "Age",
         min_value=18,
         max_value=70,
-        value=35
+        value=30,
+        step=1
+    )
+
+    DailyRate = st.number_input(
+        "Daily Rate",
+        min_value=0,
+        max_value=2000,
+        value=800,
+        step=1
+    )
+
+    DistanceFromHome = st.number_input(
+        "Distance From Home",
+        min_value=0,
+        max_value=100,
+        value=5,
+        step=1
+    )
+
+    Education = st.number_input(
+        "Education",
+        min_value=1,
+        max_value=5,
+        value=3,
+        step=1
+    )
+
+    EnvironmentSatisfaction = st.number_input(
+        "Environment Satisfaction",
+        min_value=1,
+        max_value=4,
+        value=3,
+        step=1
+    )
+
+    HourlyRate = st.number_input(
+        "Hourly Rate",
+        min_value=0,
+        max_value=200,
+        value=65,
+        step=1
+    )
+
+    JobInvolvement = st.number_input(
+        "Job Involvement",
+        min_value=1,
+        max_value=4,
+        value=3,
+        step=1
+    )
+
+    JobLevel = st.number_input(
+        "Job Level",
+        min_value=1,
+        max_value=5,
+        value=2,
+        step=1
+    )
+
+    JobSatisfaction = st.number_input(
+        "Job Satisfaction",
+        min_value=1,
+        max_value=4,
+        value=3,
+        step=1
+    )
+
+with col2:
+
+    MonthlyIncome = st.number_input(
+        "Monthly Income",
+        min_value=0,
+        max_value=200000,
+        value=5000,
+        step=100
+    )
+
+    MonthlyRate = st.number_input(
+        "Monthly Rate",
+        min_value=0,
+        max_value=30000,
+        value=14000,
+        step=100
+    )
+
+    NumCompaniesWorked = st.number_input(
+        "Number of Companies Worked",
+        min_value=0,
+        max_value=20,
+        value=2,
+        step=1
+    )
+
+    RelationshipSatisfaction = st.number_input(
+        "Relationship Satisfaction",
+        min_value=1,
+        max_value=4,
+        value=3,
+        step=1
+    )
+
+    StockOptionLevel = st.number_input(
+        "Stock Option Level",
+        min_value=0,
+        max_value=3,
+        value=1,
+        step=1
+    )
+
+    TotalWorkingYears = st.number_input(
+        "Total Working Years",
+        min_value=0,
+        max_value=50,
+        value=10,
+        step=1
+    )
+
+    TrainingTimesLastYear = st.number_input(
+        "Training Times Last Year",
+        min_value=0,
+        max_value=20,
+        value=3,
+        step=1
+    )
+
+    WorkLifeBalance = st.number_input(
+        "Work Life Balance",
+        min_value=1,
+        max_value=4,
+        value=3,
+        step=1
+    )
+
+    YearsAtCompany = st.number_input(
+        "Years At Company",
+        min_value=0,
+        max_value=50,
+        value=5,
+        step=1
+    )
+
+with col3:
+
+    YearsInCurrentRole = st.number_input(
+        "Years In Current Role",
+        min_value=0,
+        max_value=20,
+        value=3,
+        step=1
+    )
+
+    YearsSinceLastPromotion = st.number_input(
+        "Years Since Last Promotion",
+        min_value=0,
+        max_value=20,
+        value=1,
+        step=1
+    )
+
+    YearsWithCurrManager = st.number_input(
+        "Years With Current Manager",
+        min_value=0,
+        max_value=20,
+        value=2,
+        step=1
     )
 
     Attrition = st.selectbox(
@@ -419,16 +582,10 @@ with col1:
     BusinessTravel = st.selectbox(
         "Business Travel",
         [
+            "Non-Travel",
             "Travel_Rarely",
-            "Travel_Frequently",
-            "Non-Travel"
+            "Travel_Frequently"
         ]
-    )
-
-    DailyRate = st.number_input(
-        "Daily Rate",
-        min_value=0,
-        value=800
     )
 
     Department = st.selectbox(
@@ -438,19 +595,6 @@ with col1:
             "Research & Development",
             "Human Resources"
         ]
-    )
-
-    DistanceFromHome = st.number_input(
-        "Distance From Home",
-        min_value=0,
-        value=5
-    )
-
-    Education = st.number_input(
-        "Education",
-        min_value=1,
-        max_value=5,
-        value=3
     )
 
     EducationField = st.selectbox(
@@ -465,43 +609,9 @@ with col1:
         ]
     )
 
-    EnvironmentSatisfaction = st.number_input(
-        "Environment Satisfaction",
-        min_value=1,
-        max_value=4,
-        value=3
-    )
-
-
-# ============================================================
-# COLUMN 2
-# ============================================================
-
-with col2:
-
     Gender = st.selectbox(
         "Gender",
-        ["Male", "Female"]
-    )
-
-    HourlyRate = st.number_input(
-        "Hourly Rate",
-        min_value=0,
-        value=65
-    )
-
-    JobInvolvement = st.number_input(
-        "Job Involvement",
-        min_value=1,
-        max_value=4,
-        value=3
-    )
-
-    JobLevel = st.number_input(
-        "Job Level",
-        min_value=1,
-        max_value=5,
-        value=2
+        ["Female", "Male"]
     )
 
     JobRole = st.selectbox(
@@ -519,13 +629,6 @@ with col2:
         ]
     )
 
-    JobSatisfaction = st.number_input(
-        "Job Satisfaction",
-        min_value=1,
-        max_value=4,
-        value=3
-    )
-
     MaritalStatus = st.selectbox(
         "Marital Status",
         [
@@ -535,124 +638,9 @@ with col2:
         ]
     )
 
-    MonthlyIncome = st.number_input(
-        "Monthly Income",
-        min_value=0,
-        value=5000
-    )
-
-    MonthlyRate = st.number_input(
-        "Monthly Rate",
-        min_value=0,
-        value=15000
-    )
-
-
-# ============================================================
-# COLUMN 3
-# ============================================================
-
-with col3:
-
-    NumCompaniesWorked = st.number_input(
-        "Number of Companies Worked",
-        min_value=0,
-        value=2
-    )
-
     OverTime = st.selectbox(
         "Over Time",
         ["No", "Yes"]
-    )
-
-    RelationshipSatisfaction = st.number_input(
-        "Relationship Satisfaction",
-        min_value=1,
-        max_value=4,
-        value=3
-    )
-
-    StockOptionLevel = st.number_input(
-        "Stock Option Level",
-        min_value=0,
-        max_value=3,
-        value=1
-    )
-
-    TotalWorkingYears = st.number_input(
-        "Total Working Years",
-        min_value=0,
-        value=10
-    )
-
-    TrainingTimesLastYear = st.number_input(
-        "Training Times Last Year",
-        min_value=0,
-        value=3
-    )
-
-    WorkLifeBalance = st.number_input(
-        "Work Life Balance",
-        min_value=1,
-        max_value=4,
-        value=3
-    )
-
-    YearsAtCompany = st.number_input(
-        "Years At Company",
-        min_value=0,
-        value=5
-    )
-
-    YearsInCurrentRole = st.number_input(
-        "Years In Current Role",
-        min_value=0,
-        value=3
-    )
-
-
-# ============================================================
-# REMAINING VARIABLES
-# ============================================================
-
-col4, col5, col6 = st.columns(3)
-
-with col4:
-
-    YearsSinceLastPromotion = st.number_input(
-        "Years Since Last Promotion",
-        min_value=0,
-        value=1
-    )
-
-with col5:
-
-    YearsWithCurrManager = st.number_input(
-        "Years With Current Manager",
-        min_value=0,
-        value=2
-    )
-
-with col6:
-
-    st.markdown(
-        """
-        <div class="info-card">
-
-        <div class="card-title">
-        Classification Categories
-        </div>
-
-        <p>
-        The model classifies the observed performance category as:
-        </p>
-
-        <strong>Excellent</strong><br>
-        <strong>Outstanding</strong>
-
-        </div>
-        """,
-        unsafe_allow_html=True
     )
 
 
@@ -661,39 +649,52 @@ with col6:
 # ============================================================
 
 input_data = pd.DataFrame(
-    [
-        {
-            "Age": Age,
-            "Attrition": Attrition,
-            "BusinessTravel": BusinessTravel,
-            "DailyRate": DailyRate,
-            "Department": Department,
-            "DistanceFromHome": DistanceFromHome,
-            "Education": Education,
-            "EducationField": EducationField,
-            "EnvironmentSatisfaction": EnvironmentSatisfaction,
-            "Gender": Gender,
-            "HourlyRate": HourlyRate,
-            "JobInvolvement": JobInvolvement,
-            "JobLevel": JobLevel,
-            "JobRole": JobRole,
-            "JobSatisfaction": JobSatisfaction,
-            "MaritalStatus": MaritalStatus,
-            "MonthlyIncome": MonthlyIncome,
-            "MonthlyRate": MonthlyRate,
-            "NumCompaniesWorked": NumCompaniesWorked,
-            "OverTime": OverTime,
-            "RelationshipSatisfaction": RelationshipSatisfaction,
-            "StockOptionLevel": StockOptionLevel,
-            "TotalWorkingYears": TotalWorkingYears,
-            "TrainingTimesLastYear": TrainingTimesLastYear,
-            "WorkLifeBalance": WorkLifeBalance,
-            "YearsAtCompany": YearsAtCompany,
-            "YearsInCurrentRole": YearsInCurrentRole,
-            "YearsSinceLastPromotion": YearsSinceLastPromotion,
-            "YearsWithCurrManager": YearsWithCurrManager
-        }
-    ]
+    [{
+        "Age": Age,
+        "Attrition": Attrition,
+        "BusinessTravel": BusinessTravel,
+        "DailyRate": DailyRate,
+        "Department": Department,
+        "DistanceFromHome": DistanceFromHome,
+        "Education": Education,
+        "EducationField": EducationField,
+        "EnvironmentSatisfaction": EnvironmentSatisfaction,
+        "Gender": Gender,
+        "HourlyRate": HourlyRate,
+        "JobInvolvement": JobInvolvement,
+        "JobLevel": JobLevel,
+        "JobRole": JobRole,
+        "JobSatisfaction": JobSatisfaction,
+        "MaritalStatus": MaritalStatus,
+        "MonthlyIncome": MonthlyIncome,
+        "MonthlyRate": MonthlyRate,
+        "NumCompaniesWorked": NumCompaniesWorked,
+        "OverTime": OverTime,
+        "RelationshipSatisfaction": RelationshipSatisfaction,
+        "StockOptionLevel": StockOptionLevel,
+        "TotalWorkingYears": TotalWorkingYears,
+        "TrainingTimesLastYear": TrainingTimesLastYear,
+        "WorkLifeBalance": WorkLifeBalance,
+        "YearsAtCompany": YearsAtCompany,
+        "YearsInCurrentRole": YearsInCurrentRole,
+        "YearsSinceLastPromotion": YearsSinceLastPromotion,
+        "YearsWithCurrManager": YearsWithCurrManager
+    }]
+)
+
+
+# ============================================================
+# CLASSIFICATION BUTTON
+# ============================================================
+
+st.markdown(
+    "<br>",
+    unsafe_allow_html=True
+)
+
+predict_button = st.button(
+    "🔎 Classify Employee Performance",
+    use_container_width=True
 )
 
 
@@ -701,121 +702,142 @@ input_data = pd.DataFrame(
 # CLASSIFICATION
 # ============================================================
 
-st.markdown(
-    '<div class="section-heading">Performance Classification</div>',
-    unsafe_allow_html=True
-)
-
-if st.button("CLASSIFY EMPLOYEE PERFORMANCE"):
+if predict_button:
 
     try:
 
-        # ====================================================
-        # MODEL PREDICTION
-        # ====================================================
+        # ----------------------------------------------------
+        # Model prediction
+        # ----------------------------------------------------
 
         prediction = model.predict(input_data)[0]
 
-        probabilities = model.predict_proba(input_data)[0]
-
-        excellent_probability = probabilities[0]
-        outstanding_probability = probabilities[1]
-
-        if prediction == 1:
-            result = "OUTSTANDING"
+        if hasattr(model, "predict_proba"):
+            probabilities = model.predict_proba(input_data)[0]
         else:
-            result = "EXCELLENT"
+            probabilities = None
+
+        # Dataset mapping:
+        # 0 = Excellent
+        # 1 = Outstanding
+
+        if int(prediction) == 0:
+            prediction_label = "Excellent"
+        else:
+            prediction_label = "Outstanding"
 
 
-        # ====================================================
-        # RESULT
-        # ====================================================
+        # ----------------------------------------------------
+        # Probabilities
+        # ----------------------------------------------------
+
+        excellent_prob = 0.0
+        outstanding_prob = 0.0
+
+        if probabilities is not None:
+
+            classes = list(model.classes_)
+
+            if 0 in classes:
+                excellent_prob = probabilities[classes.index(0)]
+
+            if 1 in classes:
+                outstanding_prob = probabilities[classes.index(1)]
+
+
+        # ----------------------------------------------------
+        # Result
+        # ----------------------------------------------------
+
+        st.markdown(
+            """
+            <div class="section-title">
+                Classification Result
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         st.markdown(
             f"""
             <div class="result-card">
-
                 <div class="result-label">
                     Classified Performance Category
                 </div>
-
                 <div class="result-value">
-                    {result}
+                    {prediction_label.upper()}
                 </div>
-
             </div>
             """,
             unsafe_allow_html=True
         )
 
 
-        # ====================================================
-        # PROBABILITIES
-        # ====================================================
-
-        st.markdown(
-            '<div class="section-heading">'
-            'Classification Probabilities'
-            '</div>',
-            unsafe_allow_html=True
-        )
-
-        p1, p2 = st.columns(2)
-
-        with p1:
-
-            st.markdown(
-                f"""
-                <div class="prob-card">
-
-                    <div class="prob-title">
-                        Excellent
-                    </div>
-
-                    <div class="prob-value">
-                        {excellent_probability:.2%}
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        with p2:
-
-            st.markdown(
-                f"""
-                <div class="prob-card">
-
-                    <div class="prob-title">
-                        Outstanding
-                    </div>
-
-                    <div class="prob-value">
-                        {outstanding_probability:.2%}
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-
-        # ====================================================
-        # PROBABILITY INTERPRETATION
-        # ====================================================
+        # ----------------------------------------------------
+        # Probability cards
+        # ----------------------------------------------------
 
         st.markdown(
             """
-            <div class="notice">
+            <div class="section-title">
+                Classification Probabilities
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-            <strong>Interpretation:</strong><br>
+        col1, col2 = st.columns(2)
 
-            The displayed probabilities are model-generated estimates
-            associated with the two observed performance categories.
-            They should not be interpreted as certainty or as evidence
-            of an employee's actual or future performance.
+        with col1:
 
+            st.markdown(
+                f"""
+                <div class="prob-card">
+                    <div class="prob-title">
+                        Excellent
+                    </div>
+                    <div class="prob-value">
+                        {excellent_prob:.2%}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with col2:
+
+            st.markdown(
+                f"""
+                <div class="prob-card">
+                    <div class="prob-title">
+                        Outstanding
+                    </div>
+                    <div class="prob-value">
+                        {outstanding_prob:.2%}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+        # ----------------------------------------------------
+        # Interpretation
+        # ----------------------------------------------------
+
+        st.markdown(
+            """
+            <div class="info-card">
+                <div class="info-title">
+                    Interpretation
+                </div>
+                <div class="info-text">
+                    The displayed probabilities are model estimates for the
+                    two observed performance categories represented in the
+                    experimental dataset. They should not be interpreted as
+                    guarantees or as evidence of an employee's true future
+                    performance.
+                </div>
             </div>
             """,
             unsafe_allow_html=True
@@ -827,127 +849,151 @@ if st.button("CLASSIFY EMPLOYEE PERFORMANCE"):
         # ====================================================
 
         st.markdown(
-            '<div class="section-heading">'
-            'SHAP Explanation'
-            '</div>',
+            """
+            <div class="section-title">
+                SHAP Explanation
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
         try:
 
+            # Transform the input using the same preprocessing
+            # pipeline used during model training.
             transformed_input = preprocessor.transform(input_data)
 
-            feature_names = preprocessor.get_feature_names_out()
+            # Obtain transformed feature names
+            try:
+                feature_names = preprocessor.get_feature_names_out()
+            except Exception:
+                feature_names = [
+                    f"Feature {i + 1}"
+                    for i in range(transformed_input.shape[1])
+                ]
 
+            # Convert sparse matrix to dense if necessary
+            if hasattr(transformed_input, "toarray"):
+                transformed_dense = transformed_input.toarray()
+            else:
+                transformed_dense = np.asarray(transformed_input)
+
+            # TreeExplainer
             explainer = shap.TreeExplainer(tree_model)
 
-            shap_result = explainer(transformed_input)
-
-            shap_values = shap_result.values
-
+            shap_values = explainer.shap_values(transformed_dense)
 
             # ------------------------------------------------
-            # HANDLE DIFFERENT SHAP OUTPUT SHAPES
+            # Handle different SHAP output formats
             # ------------------------------------------------
 
-            if shap_values.ndim == 3:
+            if isinstance(shap_values, list):
 
-                # Binary classification:
-                # rows × features × classes
-
-                local_values = shap_values[0, :, 1]
-
-            elif shap_values.ndim == 2:
-
-                local_values = shap_values[0]
+                if len(shap_values) > 1:
+                    values = np.asarray(shap_values[1])[0]
+                else:
+                    values = np.asarray(shap_values[0])[0]
 
             else:
 
-                local_values = np.asarray(
-                    shap_values
-                ).reshape(-1)
+                values_array = np.asarray(shap_values)
+
+                if values_array.ndim == 3:
+
+                    # Possible shape:
+                    # observations × features × classes
+
+                    if values_array.shape[-1] > 1:
+                        values = values_array[0, :, 1]
+                    else:
+                        values = values_array[0, :, 0]
+
+                elif values_array.ndim == 2:
+
+                    values = values_array[0]
+
+                else:
+
+                    values = values_array.flatten()
 
 
             # ------------------------------------------------
-            # CREATE SHAP DATAFRAME
+            # Make dimensions safe
+            # ------------------------------------------------
+
+            values = np.asarray(values).flatten()
+
+            if len(values) != len(feature_names):
+
+                min_length = min(
+                    len(values),
+                    len(feature_names)
+                )
+
+                values = values[:min_length]
+                feature_names = feature_names[:min_length]
+
+
+            # ------------------------------------------------
+            # SHAP table
             # ------------------------------------------------
 
             shap_df = pd.DataFrame(
                 {
                     "Feature": feature_names,
-                    "SHAP Value": local_values
+                    "SHAP Value": values,
+                    "Absolute SHAP Value": np.abs(values)
                 }
             )
 
-            shap_df["Absolute SHAP"] = (
-                shap_df["SHAP Value"].abs()
+            shap_df = shap_df.sort_values(
+                "Absolute SHAP Value",
+                ascending=False
+            ).head(15)
+
+
+            st.write(
+                "The following features had the largest absolute SHAP "
+                "contributions for this classification."
             )
-
-            shap_df = (
-                shap_df
-                .sort_values(
-                    "Absolute SHAP",
-                    ascending=False
-                )
-                .head(10)
-            )
-
-
-            # ------------------------------------------------
-            # SHAP EXPLANATION NOTICE
-            # ------------------------------------------------
-
-            st.markdown(
-                """
-                <div class="info-card">
-
-                <div class="card-title">
-                Top Factors Contributing to the Classification
-                </div>
-
-                <p>
-                SHAP values indicate how the model's input features
-                contributed to the classification for this particular
-                employee record. They describe model behaviour and
-                should not be interpreted as causal effects.
-                </p>
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-
-            # ------------------------------------------------
-            # SHAP BAR CHART
-            # ------------------------------------------------
-
-            st.bar_chart(
-                shap_df.set_index("Feature")["SHAP Value"]
-            )
-
-
-            # ------------------------------------------------
-            # SHAP TABLE
-            # ------------------------------------------------
 
             st.dataframe(
                 shap_df[
-                    [
-                        "Feature",
-                        "SHAP Value"
-                    ]
-                ],
+                    ["Feature", "SHAP Value"]
+                ].reset_index(drop=True),
                 use_container_width=True,
                 hide_index=True
             )
 
 
-        except Exception:
+            # ------------------------------------------------
+            # SHAP bar chart
+            # ------------------------------------------------
+
+            chart_df = shap_df.copy()
+
+            chart_df = chart_df.sort_values(
+                "Absolute SHAP Value",
+                ascending=True
+            )
+
+            st.bar_chart(
+                chart_df.set_index("Feature")[
+                    "Absolute SHAP Value"
+                ]
+            )
+
+            st.caption(
+                "SHAP values describe the contribution of model features "
+                "to the classification for this input. They indicate model "
+                "association and should not be interpreted as causal effects."
+            )
+
+        except Exception as shap_error:
 
             st.warning(
-                "The SHAP explanation could not be generated "
-                "for this classification."
+                "The classification was completed, but the SHAP explanation "
+                f"could not be generated for this input. Details: {shap_error}"
             )
 
 
@@ -956,100 +1002,88 @@ if st.button("CLASSIFY EMPLOYEE PERFORMANCE"):
         # ====================================================
 
         st.markdown(
-            '<div class="section-heading">'
-            'Submitted Employee Information'
-            '</div>',
+            """
+            <div class="section-title">
+                Submitted Employee Information
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
+        display_data = input_data.T.reset_index()
+
+        display_data.columns = [
+            "Variable",
+            "Value"
+        ]
+
         st.dataframe(
-            input_data.T.rename(
-                columns={0: "Value"}
-            ),
-            use_container_width=True
+            display_data,
+            use_container_width=True,
+            hide_index=True
         )
 
 
-    except Exception as prediction_error:
+        # ====================================================
+        # PROTOTYPE INFORMATION
+        # ====================================================
+
+        st.markdown(
+            """
+            <div class="section-title">
+                Prototype Information
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            """
+            <div class="info-card">
+                <div class="info-title">
+                    Model
+                </div>
+                <div class="info-text">
+                    Selected Decision Tree classifier based on the highest
+                    mean five-fold stratified cross-validation Macro F1
+                    among the four evaluated algorithms.
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-title">
+                    Experimental Dataset
+                </div>
+                <div class="info-text">
+                    IBM HR Analytics Employee Attrition & Performance dataset,
+                    a public fictional dataset used for the experimental
+                    evaluation.
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-title">
+                    Application Context
+                </div>
+                <div class="info-text">
+                    Aliko Dangote University of Science and Technology
+                    (ADUSTECH), Wudil, Kano State. ADUSTECH is the intended
+                    application context and is not the source of the
+                    experimental employee records.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+    except Exception as error:
 
         st.error(
-            "The classification could not be completed. "
-            "Please check the entered information and try again."
+            "An error occurred while processing the employee information."
         )
 
-
-# ============================================================
-# PROTOTYPE INFORMATION
-# ============================================================
-
-st.markdown(
-    '<div class="section-heading">'
-    'Prototype Information'
-    '</div>',
-    unsafe_allow_html=True
-)
-
-info1, info2, info3 = st.columns(3)
-
-
-with info1:
-
-    st.markdown(
-        """
-        <div class="info-card">
-
-        <div class="card-title">
-        Selected Model
-        </div>
-
-        <p>
-        Decision Tree Classifier
-        </p>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-with info2:
-
-    st.markdown(
-        """
-        <div class="info-card">
-
-        <div class="card-title">
-        Classification
-        </div>
-
-        <p>
-        Excellent / Outstanding
-        </p>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-with info3:
-
-    st.markdown(
-        """
-        <div class="info-card">
-
-        <div class="card-title">
-        Explainability
-        </div>
-
-        <p>
-        SHAP TreeExplainer
-        </p>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        st.exception(error)
 
 
 # ============================================================
@@ -1059,17 +1093,10 @@ with info3:
 st.markdown(
     """
     <div class="footer">
-
-    <strong>MSc Research Prototype</strong>
-    &nbsp; | &nbsp;
-    ADUSTECH Application Context
-    &nbsp; | &nbsp;
-    Machine-Learning-Based Employee Performance Classification
-
-    <br>
-
-    IBM HR Analytics Employee Attrition & Performance Dataset
-
+        MSc Data Science Research Prototype<br>
+        Machine-Learning-Based Employee Performance Classification<br>
+        Aliko Dangote University of Science and Technology (ADUSTECH)
+        Application Context
     </div>
     """,
     unsafe_allow_html=True
