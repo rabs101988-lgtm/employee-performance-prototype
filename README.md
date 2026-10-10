@@ -50,7 +50,7 @@ The prototype is intended for research demonstration and is not a production hum
 3. Verify that the required model files are present.
 4. Start the Streamlit application using:
 
-   `streamlit run app.py`
+   `streamlit run app.py`https://adustech-employee-performance.streamlit.app/
 
 The application requires a compatible Python environment and all model files referenced by the source code.
 
